@@ -1,0 +1,26 @@
+{
+  "campiglia": {
+    "transport": "http",
+    "urls": {"alquiler": "https://campiglia.com.uy/inmobiliaria", "venta": "https://campiglia.com.uy/inmobiliaria"},
+    "selector": "a[href*='propiedad/ampliada/']", "max_pages": 1
+  },
+  "casasymas": {
+    "transport": "browser",
+    "urls": {"alquiler": "https://www.casasymas.com.uy/propiedades/alquiler/montevideo", "venta": "https://www.casasymas.com.uy/propiedades/venta/montevideo"},
+    "selector": "a.prop-entrada", "max_pages": 3
+  },
+  "remax": {
+    "transport": "browser",
+    "urls": {"alquiler": "https://www.remax.com.uy/apartamentos-en-alquiler-en-montevideo", "venta": "https://www.remax.com.uy/apartamentos-en-venta-en-montevideo"},
+    "selector": "a.card-remax__href", "max_pages": 1,
+    "limitation": "Reaplicar filtros antes de extraer. Paginación excluida por resultados inconsistentes en la prueba."
+  },
+  "mercadolibre": {
+    "transport": "browser",
+    "urls": {
+      "alquiler": "https://listado.mercadolibre.com.uy/inmuebles/apartamentos/alquiler/montevideo/apartamentos-alquiler_NoIndex_True",
+      "venta": "https://listado.mercadolibre.com.uy/inmuebles/apartamentos/venta/propiedades-individuales/montevideo/apartamentos-venta-montevideo_NoIndex_True"
+    },
+    "selector": ".poly-card__content", "max_pages": 3
+  }
+}

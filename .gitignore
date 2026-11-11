@@ -1,0 +1,71 @@
+# Local research and investigation (public Git branches are NOT private)
+/research/
+/docs/research/
+/graphify-out/
+
+# Captured pages, databases, exports and execution state
+/data/
+/outputs/
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite3-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.log
+
+# Credentials and local configuration; only sanitized templates may be tracked
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+/credentials/
+/secrets/
+/config/*.local.*
+
+# Python environments, caches and build artifacts
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+*.egg-info/
+build/
+dist/
+
+# JavaScript dependencies and browser artifacts
+node_modules
+.playwright/
+playwright-report/
+test-results/
+blob-report/
+.auth/
+
+# Local tools, editors and OS metadata
+.codex/
+.idea/
+.vscode/
+.DS_Store
+._*
+Thumbs.db
+*.swp
+*.swo
+*~
