@@ -301,3 +301,21 @@ información privada.
 
 `.gitignore` no elimina archivos de commits anteriores ni protege archivos
 agregados con `git add -f`. Revisá el contenido preparado antes de publicar.
+
+### Interfaz web
+
+Con Docker iniciado, abrí **http://localhost:8000** e ingresá la clave de
+`.secrets/api_key`. La interfaz permite consultar propiedades, filtrar por operación,
+barrio, dormitorios, fuente y rango de precio en una moneda determinada, y ordenar
+los resultados. **Exportar Excel** descarga todos los avisos que cumplen los filtros
+aplicados, no solo la página visible.
+
+Desde **Capturas → Nueva captura** elegís fuentes, páginas y límite de avisos.
+El trabajo continúa en el worker aunque cierres el navegador. El historial muestra
+el estado, permite cancelar trabajos todavía en cola y descargar su Excel.
+Mercado Libre sigue deshabilitado en el servicio hasta resolver el acceso.
+
+La web se sirve desde la API y no necesita Node ni un contenedor adicional.
+Usa una sesión firmada de ocho horas en una cookie HttpOnly y SameSite Strict;
+la clave no se guarda en localStorage ni en las URLs. Para acceso remoto, configurá
+HTTPS en el proxy y restringí los encabezados reenviados a ese proxy.

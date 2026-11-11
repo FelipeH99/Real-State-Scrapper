@@ -3,10 +3,10 @@ import json
 from pathlib import Path
 
 
-def write_xlsx(folder):
+def write_xlsx(folder,rows=None,scope_note=None):
     import xlsxwriter
     folder=Path(folder)
-    rows=json.loads((folder/'properties.json').read_text())
+    if rows is None:rows=json.loads((folder/'properties.json').read_text())
     columns=[('source','Fuente'),('id','ID'),('operation','Operación'),('neighborhood','Barrio'),
              ('bedrooms','Dormitorios'),('bathrooms','Baños'),('built_m2','Cubiertos m²'),
              ('total_m2','Totales m²'),('currency','Moneda'),('price','Precio'),
@@ -36,7 +36,7 @@ def write_xlsx(folder):
             sheet.add_table(0,0,len(rows),len(columns)-1,{'name':'Avisos','columns':[{'header':label} for _,label in columns],'style':'Table Style Medium 2'})
         scope=wb.add_worksheet('Alcance');scope.set_column(0,0,110)
         for i,text in enumerate([
-            'Exportación de la base: incluye avisos anteriores si alguna fuente falló.',
+            scope_note or 'Exportación de la base: incluye avisos anteriores si alguna fuente falló.',
             'Revisar runs.json y las fechas. Los avisos no equivalen a inmuebles únicos.',
             'Los grupos de duplicados son candidatos para revisar; no se eliminan registros.',
             'Precios originales; no se convierten monedas. Vacío no significa cero.',

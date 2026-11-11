@@ -39,3 +39,7 @@ assert book[:2]==b'PK'
 filtered=json.loads(request('/listings?operation=alquiler&currency=UYU&max_price=35000'))
 assert filtered['total']==1
 print(json.dumps({'smoke':'passed','job':job['id'],'ads':len(properties),'xlsx_bytes':len(book)}))
+assert b'MVD Inmuebles' in request('/',auth=False)
+assert b'function listings' in request('/assets/app.js',auth=False)
+assert request('/listings/export?operation=alquiler&currency=UYU&max_price=35000')[:2]==b'PK'
+print('Web assets and filtered Excel: passed')

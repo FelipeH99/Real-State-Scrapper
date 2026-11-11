@@ -57,10 +57,12 @@ class Store:
             self.db.execute('UPDATE runs SET ended=?,status=? WHERE id=?',(now(),status,run))
         return status
 
-    def rows(self,source=None,operation=None,neighborhood=None,bedrooms=None,currency=None,max_price=None):
+    def rows(self,source=None,operation=None,neighborhood=None,bedrooms=None,currency=None,max_price=None,min_price=None):
         from .parsers import fold
-        if max_price is not None and not currency:
-            raise ValueError('--max-price requires --currency to avoid mixing UYU and USD')
+        if (max_price is not None or min_price is not None) and not currency:
+            raise ValueError('Price filters require currency to avoid mixing UYU and USD')
+        if min_price is not None and max_price is not None and min_price>max_price:
+            raise ValueError('Minimum price cannot exceed maximum price')
         result=[]
         for item in self.db.execute('SELECT * FROM listings ORDER BY source,operation,id'):
             r=json.loads(item['payload'])
@@ -82,6 +84,7 @@ class Store:
             if bedrooms is not None and r['bedrooms'] != bedrooms: continue
             if currency and r['currency'] != currency: continue
             if max_price is not None and (r['price'] is None or r['price']>max_price): continue
+            if min_price is not None and (r['price'] is None or r['price']<min_price): continue
             r.update(first_seen=item['first_seen'],last_seen=item['last_seen'])
             result.append(r)
         return result

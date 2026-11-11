@@ -198,3 +198,31 @@ prueba el despliegue, no la disponibilidad de cada portal desde un proveedor clo
 
 Referencias de implementación: [Docker con Playwright](https://playwright.dev/python/docs/docker)
 y [FastAPI en contenedores](https://fastapi.tiangolo.com/deployment/docker/).
+
+## Aplicación web
+
+La raíz `/` sirve el explorador y el panel de capturas. Después de ejecutar
+`docker compose up -d --build`, abrí `http://localhost:8000` y usá la clave local
+`.secrets/api_key`. Las actualizaciones conservan el volumen de propiedades.
+La web inicia capturas únicamente al pulsar **Iniciar captura**.
+
+API adicional (también acepta el Bearer existente):
+
+- `POST /session` con `{"token":"CLAVE"}` crea la cookie HttpOnly por ocho horas.
+- `GET /session` verifica la sesión; `DELETE /session` elimina la cookie local.
+- `GET /listings/meta` devuelve barrios disponibles y totales de la base.
+- `GET /listings/export` genera Excel con todos los resultados filtrados.
+- `/listings` y `/listings/export` aceptan `source`, `operation`, `neighborhood`,
+  `bedrooms`, `currency`, `min_price`, `max_price` y `sort` (`recent`, `price_asc`,
+  `price_desc`). Filtrar u ordenar por precio exige moneda; no se convierten divisas.
+
+Las mutaciones autenticadas con cookie exigen `X-Requested-With: EstateWeb` y
+origen coincidente. La cookie usa Secure cuando la petición llega como HTTPS.
+En un proxy TLS, configurá Uvicorn para confiar solamente en la IP de ese proxy
+(`FORWARDED_ALLOW_IPS`), y reenviá Host y X-Forwarded-Proto correctamente. El puerto
+8000 debe quedar accesible solamente para el proxy. Rotar la clave invalida todas
+las sesiones. Cerrar sesión borra la cookie del navegador; no revoca otras sesiones.
+
+Pruebas de interfaz: `PLAYWRIGHT_TESTS=1 .venv/bin/python -m unittest discover -s tests -v`.
+El navegador usa una base temporal y comprueba filtros, paginación, descarga Excel,
+creación y cancelación de capturas, persistencia de sesión y vista móvil.

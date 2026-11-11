@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es-UY">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123b3d">
+  <title>MVD Inmuebles · Observatorio inmobiliario</title>
+  <meta name="description" content="Explorá avisos de Montevideo, compará precios y ejecutá capturas manuales.">
+  <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+<svg class="icon-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-11 11M10 3H4v17h17v-6"/></symbol>
+  <symbol id="i-house" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v11H3ZM9 21v-8h6v8"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5 7a8 8 0 0 1 13-2l2 3M4 16l2 3a8 8 0 0 0 13-2"/></symbol>
+  <symbol id="i-exit" viewBox="0 0 24 24"><path d="M9 4H4v16h5M9 12h12m-5-5 5 5-5 5"/></symbol>
+</defs></svg>
+<div id="boot" class="boot" role="status"><img src="/assets/mark.svg" width="44" height="44" alt=""><span>Conectando con tu observatorio…</span></div>
+<section id="login" class="login-layout" hidden>
+  <div class="login-story">
+    <a class="brand light" href="/"><img src="/assets/mark.svg" width="40" height="40" alt=""><span>MVD<span class="brand-sub">INMUEBLES</span></span></a>
+    <div><p class="eyebrow">OBSERVATORIO INMOBILIARIO</p><h1>Montevideo,<br>propiedad<br>por propiedad.</h1><p class="story-copy">Avisos, precios e historial en un mismo lugar. Una base propia para mirar el mercado con más información.</p><div class="story-rule"></div><p class="story-foot">Alquileres y ventas · Datos de múltiples fuentes</p></div>
+    <span class="login-location">34°54′ S &nbsp; 56°10′ O <span>MONTEVIDEO, UY</span></span>
+  </div>
+  <div class="login-access"><form id="login-form" class="login-card">
+    <span class="section-kicker">TU ESPACIO DE TRABAJO</span><h2>Bienvenido de nuevo</h2><p>Ingresá la clave de acceso de tu despliegue para consultar y actualizar los avisos.</p>
+    <label for="access-key">Clave de acceso</label><input id="access-key" name="token" type="password" autocomplete="current-password" required maxlength="512" placeholder="Ingresá tu clave" spellcheck="false">
+    <p id="login-error" class="error-message" role="alert" hidden></p>
+    <button id="login-submit" class="button primary full" type="submit">Iniciar sesión <svg><use href="#i-arrow"/></svg></button>
+    <p class="small muted">La sesión dura 8 horas. Tu clave no se guarda en el navegador.</p>
+    <details><summary>¿Dónde encuentro mi clave?</summary><p>La persona que configuró el servicio puede proporcionártela. En un despliegue local está en el archivo <code>.secrets/api_key</code>. No la compartas en enlaces ni mensajes públicos.</p></details>
+  </form></div>
+</section>
+<div id="app" class="app-layout" hidden>
+  <aside class="sidebar">
+    <a class="brand" href="/"><img src="/assets/mark.svg" width="38" height="38" alt=""><span>MVD<span class="brand-sub">INMUEBLES</span></span></a>
+    <div class="workspace-label">OBSERVATORIO</div>
+    <nav aria-label="Navegación principal">
+      <button class="nav-item selected" data-view="properties" aria-current="page"><svg><use href="#i-grid"/></svg>Propiedades<span class="nav-dot"></span></button>
+      <button class="nav-item" data-view="jobs"><svg><use href="#i-pulse"/></svg>Capturas<span id="active-count" class="count-badge" hidden>0</span></button>
+    </nav>
+    <div class="sidebar-bottom"><div class="manual-note"><span class="tiny-dot"></span>Actualización manual<p>Vos decidís cuándo<br>consultar las fuentes.</p></div><button id="logout" class="logout"><svg><use href="#i-exit"/></svg>Cerrar sesión</button></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div class="breadcrumbs">Observatorio <span>/</span> <strong id="current-section">Propiedades</strong></div><div class="topbar-right"><span class="location-label">Montevideo, Uruguay</span><span id="worker-status" class="worker-status"><span class="tiny-dot"></span>Verificando servicio</span></div></header>
+    <main>
+      <section id="properties-view" aria-labelledby="properties-title">
+        <div class="page-heading"><div><p class="eyebrow">TU PANORAMA DEL MERCADO</p><h1 id="properties-title">Propiedades en Montevideo<span class="title-period">.</span></h1><p class="page-subtitle">Explorá, compará y llevate los datos que necesitás.</p></div><button class="button primary" data-open-capture><svg><use href="#i-plus"/></svg>Nueva captura</button></div>
+        <div class="stats" aria-label="Resumen de la base">
+          <article class="stat"><span>Avisos en la base</span><div><strong id="stat-total">—</strong><span class="stat-icon"><svg><use href="#i-grid"/></svg></span></div><small>Registros guardados de todas las fuentes</small></article>
+          <article class="stat"><span>En alquiler</span><div><strong id="stat-rent">—</strong><span class="stat-tag">ALQUILER</span></div><small>Precios publicados en su moneda original</small></article>
+          <article class="stat"><span>En venta</span><div><strong id="stat-sale">—</strong><span class="stat-tag sale">VENTA</span></div><small>Los avisos pueden repetir un mismo inmueble</small></article>
+        </div>
+        <div class="explorer panel">
+          <div class="panel-heading"><div><h2>Explorador de propiedades</h2><p id="last-capture" class="small muted">Consultando fecha de los datos…</p></div><button id="export" class="button secondary"><svg><use href="#i-download"/></svg>Exportar Excel</button></div>
+          <form id="filters" class="filters">
+            <div class="filter-field"><label for="operation">Operación</label><select id="operation" name="operation"><option value="">Alquiler y venta</option><option value="alquiler">Alquiler</option><option value="venta">Venta</option></select></div>
+            <div class="filter-field neighborhood"><label for="neighborhood">Barrio</label><select id="neighborhood" name="neighborhood"><option value="">Todos los barrios</option></select></div>
+            <div class="filter-field"><label for="bedrooms">Dormitorios</label><select id="bedrooms" name="bedrooms"><option value="">Todos</option><option value="0">Monoambiente</option><option value="1">1 dormitorio</option><option value="2">2 dormitorios</option><option value="3">3 dormitorios</option><option value="4">4 dormitorios</option><option value="5">5 dormitorios</option><option value="6">6 dormitorios</option><option value="7">7 dormitorios</option><option value="8">8 dormitorios</option></select></div>
+            <div class="filter-field"><label for="currency">Moneda</label><select id="currency" name="currency"><option value="">UYU y USD</option><option value="UYU">UYU · Pesos</option><option value="USD">USD · Dólares</option></select></div>
+            <div class="filter-field"><label for="min-price">Precio desde</label><input id="min-price" name="min_price" type="number" min="0" step="any" inputmode="decimal" placeholder="Sin mínimo"></div>
+            <div class="filter-field"><label for="max-price">Precio hasta</label><input id="max-price" name="max_price" type="number" min="0" step="any" inputmode="decimal" placeholder="Sin máximo"></div>
+            <div class="filter-footer"><div><label class="sr-only" for="source">Fuente</label><select id="source" name="source" class="source-select"><option value="">Todas las fuentes</option><option value="casasymas">Casas y Más</option><option value="campiglia">Campiglia</option><option value="remax">RE/MAX</option></select><span class="price-note">Para filtrar precios, elegí una moneda.</span></div><div class="filter-actions"><button id="clear-filters" class="button text" type="button">Limpiar</button><button class="button dark" type="submit"><svg><use href="#i-search"/></svg>Aplicar filtros</button></div></div>
+          </form>
+          <p id="filter-error" class="inline-message error-message" role="alert" hidden></p>
+          <div class="results-toolbar"><div><strong id="result-count" role="status">Cargando avisos…</strong><span id="applied-label" class="small muted"></span></div><label for="sort" class="sort-label">Ordenar por <select id="sort"><option value="recent">Última captura</option><option value="price_asc" disabled>Menor precio</option><option value="price_desc" disabled>Mayor precio</option></select></label></div>
+          <div id="table-wrap" class="table-wrap" aria-busy="true"><table><thead><tr><th>PROPIEDAD</th><th>BARRIO</th><th>CARACTERÍSTICAS</th><th>PRECIO PUBLICADO</th><th>FUENTE / CAPTURA</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody id="properties-body"></tbody></table></div>
+          <div id="empty-state" class="empty-state" hidden><span class="empty-icon"><svg><use href="#i-house"/></svg></span><h3 id="empty-title">No encontramos avisos</h3><p id="empty-description">Probá con otro barrio o ampliá el rango de precios.</p><button id="empty-action" class="button secondary">Limpiar filtros</button></div>
+          <div class="pagination"><span id="page-label" class="small muted">—</span><div><button id="previous" class="button page-button" disabled aria-label="Página anterior">←</button><span id="page-number">1</span><button id="next" class="button page-button" disabled aria-label="Página siguiente">→</button></div></div>
+        </div>
+        <footer class="data-note"><span class="tiny-dot"></span>Datos de avisos públicos. Revisá la ficha original: precio, disponibilidad y ubicación pueden cambiar.</footer>
+      </section>
+      <section id="jobs-view" aria-labelledby="jobs-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow">ACTUALIZACIÓN BAJO TU CONTROL</p><h1 id="jobs-title">Capturas manuales<span class="title-period">.</span></h1><p class="page-subtitle">Consultá las fuentes y seguí cada ejecución de principio a fin.</p></div><button class="button primary" data-open-capture><svg><use href="#i-plus"/></svg>Nueva captura</button></div>
+        <div class="capture-info"><svg><use href="#i-pulse"/></svg><div><strong>Cada captura se ejecuta en segundo plano</strong><p>Podés seguir explorando mientras trabaja. Si una fuente falla, se conservan los avisos anteriores.</p></div></div>
+        <div class="panel jobs-panel"><div class="panel-heading"><div><h2>Historial de ejecuciones</h2><p class="small muted">Las últimas 50 capturas · el estado se actualiza automáticamente</p></div><button id="refresh-jobs" class="button secondary"><svg><use href="#i-refresh"/></svg>Actualizar</button></div><div id="jobs-list"></div><div id="jobs-empty" class="empty-state" hidden><span class="empty-icon"><svg><use href="#i-pulse"/></svg></span><h3>Todavía no hay capturas</h3><p>Elegí las fuentes y empezá a construir tu base de propiedades.</p><button class="button primary" data-open-capture>Crear primera captura</button></div></div>
+        <p class="data-note">El Excel de una captura contiene la base completa de ese momento. Para descargar una selección, usá los filtros de Propiedades.</p>
+      </section>
+    </main>
+  </div>
+</div>
+<dialog id="capture-dialog" aria-labelledby="capture-title">
+  <form id="capture-form"><div class="dialog-heading"><div><span class="section-kicker">ACTUALIZAR LA BASE</span><h2 id="capture-title">Nueva captura</h2></div><button type="button" class="icon-button" data-close-dialog aria-label="Cerrar ventana"><svg><use href="#i-close"/></svg></button></div>
+    <p class="muted">Elegí qué fuentes consultar. La captura comienza cuando el worker esté disponible.</p>
+    <fieldset class="source-options"><legend>Fuentes</legend>
+      <label><input type="checkbox" name="sources" value="casasymas" checked><span><strong>Casas y Más</strong><small>Hasta 30 páginas por operación</small></span><span class="source-abbr cym">C+</span></label>
+      <label><input type="checkbox" name="sources" value="campiglia"><span><strong>Campiglia</strong><small>Catálogo completo en una página</small></span><span class="source-abbr campiglia">C</span></label>
+      <label><input type="checkbox" name="sources" value="remax"><span><strong>RE/MAX</strong><small>Primera página válida · acceso sujeto al portal</small></span><span class="source-abbr remax">R</span></label>
+    </fieldset>
+    <p class="small muted unavailable-source">Mercado Libre no está disponible: el acceso sigue pendiente de validación.</p>
+    <div class="capture-fields"><div><label for="capture-pages">Páginas por operación</label><input id="capture-pages" name="pages" type="number" min="1" max="30" value="3" required></div><div><label for="capture-limit">Máximo de avisos</label><input id="capture-limit" name="max_listings" type="number" min="1" max="5000" value="500" required></div><div><label for="capture-details">Fichas a completar</label><input id="capture-details" name="details" type="number" min="0" max="100" value="0" required></div></div>
+    <div class="form-tip"><strong>Alquiler y venta</strong><p>Se consultan ambas operaciones. El límite de avisos se aplica a toda la ejecución; puede detenerla antes de completar todas las fuentes. Las fichas adicionales corresponden a Casas y Más.</p></div>
+    <p id="capture-error" class="error-message" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="button secondary" data-close-dialog>Cancelar</button><button id="capture-submit" type="submit" class="button primary"><svg><use href="#i-plus"/></svg>Iniciar captura</button></div>
+  </form>
+</dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
