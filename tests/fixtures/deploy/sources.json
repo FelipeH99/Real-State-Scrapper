@@ -1,0 +1,1 @@
+{"campiglia":{"transport":"http","urls":{"alquiler":"http://fixture:8080/listings","venta":"http://fixture:8080/listings"},"selector":"a","max_pages":1}}

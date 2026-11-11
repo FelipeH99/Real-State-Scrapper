@@ -3,7 +3,24 @@
 MVP de una herramienta local para recopilar avisos de apartamentos en alquiler y
 venta, consultar precios por barrio y dormitorios, conservar un historial y
 exportar resultados. Está implementada en Python y se usa desde la terminal.
-Todavía no incluye una interfaz web.
+Incluye además una API y un worker desplegables con Docker; todavía no incluye
+una interfaz web propia.
+
+## Despliegue con Docker
+
+```sh
+python3 scripts/setup_deploy.py
+docker compose up -d --build
+```
+
+API: `http://127.0.0.1:8000/docs`. Requiere el token local generado en
+`.secrets/api_key` para operar. Las capturas se encolan manualmente con `POST /jobs`.
+API y worker separados, cola durable, volumen persistente, health checks, límites
+por trabajo y exportación Excel sin dependencias de Codex.
+
+Ver [guía de despliegue](deploy/README.md) para autenticación, ejemplos, backups,
+actualización, CI y límites. Arquitectura para un host y un worker; Docker no
+resuelve los bloqueos de Mercado Libre ni los filtros de RE/MAX.
 
 ## Funcionalidades
 
@@ -184,7 +201,8 @@ Los filtros de exportación se aplican a los avisos, no a `changes.json` ni a
 
 ### Excel opcional
 
-`scripts/export_database.mjs` depende de `@oai/artifact-tool`, disponible en el
+El servicio Docker genera Excel de forma autónoma con XlsxWriter. El exportador
+local anterior `scripts/export_database.mjs` depende de `@oai/artifact-tool`, disponible en el
 runtime de Codex. Esa dependencia no se distribuye en este repositorio ni se
 instala con `pip`. El ejecutor intenta usar el Node del runtime local y busca la
 librería en `scripts/node_modules`; `ARTIFACT_NODE` permite indicar otro Node.
@@ -242,7 +260,11 @@ revisá el enlace de origen antes de comparar. No se verifican precios de cierre
 
 ## Desarrollo
 
+Para incluir las pruebas de API, worker y exportación portable, instalar
+`requirements-service.lock` en el entorno virtual.
+
 ```sh
+.venv/bin/pip install -r requirements-service.lock
 .venv/bin/python -m unittest discover -s tests -v
 ```
 

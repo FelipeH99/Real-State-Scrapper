@@ -1,0 +1,12 @@
+# Allowlist: no captures, credentials, local profiles, research or Git history.
+*
+!Dockerfile
+!requirements-service.lock
+!estate/
+!estate/**
+!config/
+!config/sources.json
+!deploy/
+!deploy/entrypoint.sh
+**/__pycache__
+**/*.pyc

@@ -69,3 +69,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Deployment credentials
+.secrets/

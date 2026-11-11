@@ -1,0 +1,90 @@
+name: Validate and package
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the validated image to GHCR
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-service.lock
+      - run: pip install -r requirements-service.lock
+      - run: pip check
+      - run: python -m playwright install --with-deps chromium
+      - run: PLAYWRIGHT_TESTS=1 python -m unittest discover -s tests -v
+  docker-smoke:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: real-estate:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - run: python3 scripts/setup_deploy.py
+      - run: docker compose -p estate-ci -f compose.yaml -f compose.smoke.yaml up -d --no-build
+      - run: python3 scripts/smoke_deploy.py
+      - run: docker compose -p estate-ci -f compose.yaml -f compose.smoke.yaml exec -T worker xvfb-run -a python /fixtures/browser_smoke.py
+      - run: python3 scripts/smoke_restart.py --project estate-ci
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose -p estate-ci -f compose.yaml -f compose.smoke.yaml logs --tail=100
+      - name: Cleanup disposable CI data
+        if: always()
+        run: docker compose -p estate-ci -f compose.yaml -f compose.smoke.yaml down -v
+  publish:
+    needs: [test, docker-smoke]
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,prefix=sha-,format=long
+            type=ref,event=tag
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          provenance: true
+          sbom: true

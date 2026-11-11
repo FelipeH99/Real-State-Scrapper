@@ -1,3 +1,4 @@
+import os
 import argparse
 import csv
 import json
@@ -7,11 +8,12 @@ from .parsers import PARSERS, parse
 from .storage import Store
 
 ROOT=Path(__file__).resolve().parents[1]
+DATA_ROOT=Path(os.environ.get('ESTATE_DATA_DIR',ROOT/'data'))
 
 
 def main():
     p=argparse.ArgumentParser(description='Inmuebles Montevideo: captura, historial y exportación')
-    p.add_argument('--db',default=str(ROOT/'data/estate.sqlite3'))
+    p.add_argument('--db',default=str(DATA_ROOT/'estate.sqlite3'))
     sub=p.add_subparsers(dest='cmd',required=True)
     run=sub.add_parser('collect',help='Run bounded anonymous collectors')
     run.add_argument('--sources',nargs='+',default=['campiglia'])
@@ -43,23 +45,23 @@ def main():
     args=p.parse_args()
     if args.cmd=='login':
         from .session import login
-        config=json.loads((ROOT/'config/sources.json').read_text())
+        config=json.loads(Path(os.environ.get('ESTATE_SOURCES_CONFIG',ROOT/'config/sources.json')).read_text())
         login(config['mercadolibre']['urls']['alquiler'])
         return 0
     store=Store(args.db)
     if args.cmd=='enrich':
         from .details import enrich
         if not 1<=args.limit<=100: p.error('--limit must be between 1 and 100')
-        return enrich(store,args.sources,args.limit,args.headed,ROOT/'data/details',operation=args.operation)
+        return enrich(store,args.sources,args.limit,args.headed,DATA_ROOT/'details',operation=args.operation)
     if args.cmd=='collect':
         from .collect import collect
-        config=json.loads((ROOT/'config/sources.json').read_text())
+        config=json.loads(Path(os.environ.get('ESTATE_SOURCES_CONFIG',ROOT/'config/sources.json')).read_text())
         unknown=set(args.sources)-set(config)
         if unknown: p.error(f'Sources unavailable for live collection: {unknown}')
         if args.max_listings<1:p.error('--max-listings must be positive')
         if (args.neighborhoods or args.bedrooms) and args.sources!=['casasymas']:
             p.error('Partition filters currently require --sources casasymas')
-        run,status=collect(store,config,args.sources,args.pages,args.delay,args.headed,ROOT/'data/captures',
+        run,status=collect(store,config,args.sources,args.pages,args.delay,args.headed,DATA_ROOT/'captures',
             use_ml_profile=args.use_ml_profile,neighborhoods=args.neighborhoods,bedrooms=args.bedrooms,max_listings=args.max_listings)
         print(json.dumps(dict(run=run,status=status),indent=2))
         return 0 if status=='success' else 2

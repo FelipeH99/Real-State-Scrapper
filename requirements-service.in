@@ -1,0 +1,6 @@
+# Human-maintained inputs; install the exact resolved requirements-service.lock in deployments.
+-r requirements-browser.txt
+fastapi
+uvicorn
+xlsxwriter
+httpx

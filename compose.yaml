@@ -1,0 +1,59 @@
+name: real-estate
+x-common: &common
+  image: ${ESTATE_IMAGE:-real-estate:local}
+  build: .
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:size=512m,mode=1777
+  volumes:
+    - estate-data:/var/lib/estate
+  environment:
+    ESTATE_DATA_DIR: /var/lib/estate
+    ESTATE_JOB_TIMEOUT: ${ESTATE_JOB_TIMEOUT:-3600}
+    HOME: /tmp
+  security_opt:
+    - no-new-privileges:true
+  cap_drop: [ALL]
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+services:
+  api:
+    <<: *common
+    command: [api]
+    ports:
+      - '${ESTATE_BIND:-127.0.0.1}:${ESTATE_PORT:-8000}:8000'
+    environment:
+      ESTATE_DATA_DIR: /var/lib/estate
+      ESTATE_API_KEY_FILE: /run/secrets/api_key
+    secrets: [api_key]
+    mem_limit: 512m
+    cpus: 1
+    healthcheck:
+      test: [CMD, python, -m, estate.service.health, api]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+  worker:
+    <<: *common
+    command: [worker]
+    shm_size: 1gb
+    mem_limit: 3g
+    cpus: 2
+    stop_grace_period: 30s
+    healthcheck:
+      test: [CMD, python, -m, estate.service.health, worker]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+volumes:
+  estate-data:
+secrets:
+  api_key:
+    file: .secrets/api_key
