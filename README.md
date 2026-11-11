@@ -19,9 +19,9 @@ Todavía no incluye una interfaz web.
 | Fuente | Integración | Estado |
 | --- | --- | --- |
 | Campiglia | HTTP | Captura y exportación probadas en vivo |
-| Casas y Más | Playwright | Captura autónoma validada en alquiler y venta, con dos páginas por operación |
-| RE/MAX | Playwright visible (`--headed`) | Captura y exportación validadas en alquiler y venta; una página por operación |
-| Mercado Libre | Playwright | Probado: HTTP 403 en modo sin ventana; exige cuenta en modo visible. Captura anónima bloqueada |
+| Casas y Más | Playwright | Captura validada en alquiler y venta; ocho páginas por operación y búsquedas por barrio/dormitorios probadas |
+| RE/MAX | Playwright visible (`--headed`) | Primera página validada; pruebas de paginación rechazadas porque el portal pierde los filtros |
+| Mercado Libre | Playwright | Captura anónima bloqueada. Perfil local opcional; inicio de sesión manual probado, bloqueado por verificación/límite de intentos |
 | InfoCasas y Casasweb | Importación de HTML | Parsers disponibles; captura en vivo deshabilitada |
 
 El acceso depende de cada portal y puede cambiar. Un bloqueo o desafío se registra
@@ -67,7 +67,7 @@ sh scripts/run.sh --sources casasymas remax mercadolibre --headed
 En la prueba actual, Mercado Libre exige una cuenta y se informa como fuente
 bloqueada: no se obtienen avisos nuevos de ese portal. Esto no se corrige cambiando
 selectores. El proceso continúa con las otras fuentes y termina con código `2`.
-No utiliza sesiones personales ni intenta completar la verificación.
+Solo usa un perfil local de Mercado Libre si lo habilitás explícitamente. No completa verificaciones automáticamente.
 
 No se instala ninguna tarea programada. Un bloqueo de proceso impide ejecutar
 dos capturas simultáneas. El código de salida `2` indica captura parcial o fallida:
@@ -89,11 +89,71 @@ Capturar sin exportar, con navegador visible:
 .venv/bin/python -m estate collect --sources casasymas mercadolibre --pages 2 --headed
 ```
 
-La paginación tiene un máximo de tres páginas por búsqueda en Casas y Más y
-Mercado Libre, y una en Campiglia y RE/MAX. En RE/MAX está limitada porque la
-navegación puede perder los filtros; se rechazan resultados contradictorios.
-El recolector conserva los resultados iniciales válidos y solo reaplica los filtros
-cuando son inconsistentes, seleccionando explícitamente la operación.
+La paginación tiene un máximo de 30 páginas por búsqueda en Casas y Más, tres
+en Mercado Libre y una en Campiglia y RE/MAX. En RE/MAX se probaron la navegación
+y la selección completa de filtros: las páginas siguientes devuelven resultados
+inconsistentes y se mantienen deshabilitadas. No se incorporan esos avisos.
+
+### Ampliar la muestra
+
+```sh
+sh scripts/run.sh --sources casasymas --pages 8 --max-listings 1000 --details 12
+```
+
+La captura selecciona explícitamente apartamentos en Montevideo. `--max-listings`
+es un límite global de avisos nuevos en **esa ejecución**, no del tamaño acumulado
+de SQLite. Si se alcanza, pueden quedar operaciones o fuentes sin recorrer.
+Los IDs repetidos entre páginas y búsquedas se cuentan una sola vez por ejecución.
+Cada captura conserva un `summary.json` con páginas, avisos nuevos y motivo de parada.
+Una página repetida detiene la navegación sin eliminar datos anteriores.
+
+Para distribuir la búsqueda por barrio y dormitorios:
+
+```sh
+sh scripts/run.sh --sources casasymas --neighborhoods Pocitos Cordón --bedrooms 1 2 --pages 2 --max-listings 500
+```
+
+Estos filtros de captura están habilitados para Casas y Más. Se ejecuta cada
+combinación en alquiler y venta; los resultados se vuelven a filtrar por barrio
+y dormitorios antes de guardarlos. Los filtros de exportación siguen disponibles
+para todas las fuentes. Ampliar páginas no convierte la muestra en un censo ni en
+una muestra estadísticamente representativa.
+
+### Completar fichas individuales
+
+```sh
+.venv/bin/python -m estate enrich --sources casasymas --limit 12
+.venv/bin/python -m estate enrich --sources casasymas --operation venta --limit 4
+.venv/bin/python -m estate export
+```
+
+El enriquecimiento implementado corresponde a Casas y Más: completa campos
+faltantes de dormitorios, baños, superficie construida, gastos comunes, barrio,
+inmobiliaria y referencia externa cuando están informados. No reemplaza precios
+ni datos ya conocidos del listado. Mantiene `detail_observed_at` separado de
+`last_seen` para no presentar un precio antiguo como recién consultado. La opción
+`--details N` del ejecutor manual realiza este paso antes de exportar, con un
+máximo de 100 fichas y pausas entre visitas. Prioriza avisos sin enriquecer.
+Las fichas de RE/MAX, Campiglia y Mercado Libre todavía no tienen enriquecimiento.
+
+### Sesión manual de Mercado Libre
+
+```sh
+.venv/bin/python -m estate login
+# Luego de ingresar manualmente y cerrar la ventana desde Enter en la terminal:
+sh scripts/run.sh --sources mercadolibre --headed --use-ml-profile
+```
+
+El perfil dedicado está en `data/browser-profiles/mercadolibre/`, ignorado por Git.
+No usa tu perfil habitual ni solicita contraseñas en la terminal. Sin
+`--use-ml-profile`, la captura sigue usando un contexto anónimo. La creación de un
+perfil no confirma que la sesión esté autenticada ni que el portal permita extraer.
+
+En la prueba manual, Google rechazó el navegador y el acceso directo de Mercado
+Libre alcanzó el límite de intentos. Se detuvo la prueba. Si aparece ese mensaje,
+no sigas intentando: retomá manualmente cuando el portal vuelva a permitirlo.
+El acceso por API con OAuth todavía requiere una aplicación autorizada y no fue
+validado en este MVP.
 
 ### Consultar y exportar
 
@@ -115,6 +175,8 @@ La exportación predeterminada se escribe en `outputs/automated/`:
 | `properties.csv` | Avisos para abrir en Excel u otras herramientas |
 | `changes.json` | Historial de cambios de la base completa |
 | `runs.json` | Estado de las ejecuciones de la base completa |
+| `duplicates.json` | Grupos de posibles duplicados y evidencia |
+| `coverage.json` | Cantidad de avisos por fuente/operación y fichas enriquecidas |
 | `inmuebles-montevideo.xlsx` | Libro opcional con filtros y notas de alcance |
 
 Los filtros de exportación se aplican a los avisos, no a `changes.json` ni a
@@ -162,8 +224,14 @@ en `data/captures/`. Las fechas se normalizan a UTC. Para usar otra base:
 .venv/bin/python -m estate --db /ruta/a/otra.sqlite3 status
 ```
 
-Un registro representa fuente + identificador + operación. No se deduplican
-inmuebles entre portales. La ausencia de un aviso no se interpreta como una venta,
+Un registro representa fuente + identificador + operación. Se detectan grupos
+entre portales cuando comparten una referencia externa explícita (por ejemplo,
+Casasweb) o coinciden dirección con número, dormitorios, superficie, precio y
+moneda. Las coincidencias de atributos son **candidatos para revisar**: dos unidades
+del mismo edificio pueden compartirlos. No se fusionan ni borran avisos, ni se
+presenta la cantidad de grupos como cantidad exacta de inmuebles únicos.
+
+Los grupos se exportan en `duplicates.json` y se señalan en JSON, CSV y Excel. La ausencia de un aviso no se interpreta como una venta,
 un alquiler confirmado ni una baja.
 
 Se preservan monedas originales y precios «desde». Los campos desconocidos quedan
@@ -192,6 +260,9 @@ PLAYWRIGHT_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
 | `estate/parsers.py` | Extracción y normalización |
 | `estate/legacy_parsers.py` | Compatibilidad con importaciones históricas |
 | `estate/storage.py` | SQLite, filtros e historial |
+| `estate/details.py` | Enriquecimiento de fichas |
+| `estate/duplicates.py` | Candidatos a duplicados entre portales |
+| `estate/session.py` | Perfil dedicado e inicio de sesión manual |
 | `estate/__main__.py` | Comandos |
 | `config/sources.json` | Fuentes y búsquedas habilitadas |
 | `scripts/run_manual.py` | Captura y exportación con bloqueo de proceso |

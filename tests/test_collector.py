@@ -78,6 +78,36 @@ class BrowserIntegrationTests(unittest.TestCase):
             finally:
                 browser.close()
 
+    def test_repeated_page_and_global_limit_stop_without_duplicate_inserts(self):
+        html='''<a href="/propiedad/ampliada/123"><h3>Apartamento en alquiler Alquiler $ 30.000</h3>
+        <p class="data">Ejemplo 123</p><p class="data">Montevideo</p>
+        <p class="data">Cordón</p><p class="data">2 dormitorios</p></a><a href="/next">Siguiente</a>'''
+        hits=[]
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                hits.append(self.path)
+                self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.end_headers();self.wfile.write(html.encode())
+            def log_message(self,*args):pass
+        server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                base=f'http://127.0.0.1:{server.server_port}'
+                config={'campiglia':dict(transport='browser',selector='a',max_pages=3,urls={'alquiler':base+'/ok'})}
+                for budget,reason in [(100,'repeated_results'),(1,'listing_limit')]:
+                    hits.clear();store=Store(Path(tmp)/f'{budget}.sqlite3')
+                    try:
+                        with contextlib.redirect_stdout(io.StringIO()):
+                            run,status=collect(store,config,['campiglia'],pages=3,delay=0,output=Path(tmp)/'captures',max_listings=budget)
+                        self.assertEqual(status,'success')
+                        self.assertEqual(len(store.rows()),1)
+                        summary=json.loads((Path(tmp)/'captures'/run/'summary.json').read_text())
+                        self.assertEqual(summary['jobs'][0]['stop'],reason)
+                        if budget==1:self.assertNotIn('/next',hits)
+                        else:self.assertIn('/next',hits)
+                    finally:store.db.close()
+        finally:server.shutdown();server.server_close();thread.join()
+
     def test_capture_failure_diagnostics_and_partial_run(self):
         html='''<a href="/propiedad/ampliada/123"><h3>Apartamento en alquiler Alquiler $ 30.000</h3>
         <p class="data">Calle de ejemplo 123</p><p class="data">Montevideo</p>
@@ -115,7 +145,7 @@ class BrowserIntegrationTests(unittest.TestCase):
                     folder=Path(tmp)/'captures'/run
                     manifest=json.loads((folder/'manifest.json').read_text())
                     self.assertEqual(len(manifest),1)
-                    error=json.loads((folder/'campiglia-venta-1-error.json').read_text())
+                    error=json.loads((folder/'2-campiglia-venta-1-error.json').read_text())
                     self.assertEqual(error['http_status'],403)
                     self.assertTrue((folder/error['html']).exists())
                     self.assertTrue((folder/error['png']).exists())

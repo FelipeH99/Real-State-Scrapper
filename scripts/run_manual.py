@@ -13,10 +13,15 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--db',type=Path,default=root/'data/estate.sqlite3')
     parser.add_argument('--out',type=Path,default=root/'outputs/automated')
-    parser.add_argument('--sources',nargs='+',default=['campiglia','casasymas','remax','mercadolibre'])
-    parser.add_argument('--pages',type=int,choices=range(1,11),default=1)
+    parser.add_argument('--sources',nargs='+',default=['campiglia','casasymas','remax'])
+    parser.add_argument('--pages',type=int,choices=range(1,51),default=1)
     parser.add_argument('--delay',type=float,default=3)
     parser.add_argument('--headed',action='store_true')
+    parser.add_argument('--use-ml-profile',action='store_true')
+    parser.add_argument('--neighborhoods',nargs='+')
+    parser.add_argument('--bedrooms',type=int,nargs='+')
+    parser.add_argument('--max-listings',type=int,default=1000)
+    parser.add_argument('--details',type=int,default=0,choices=range(0,101))
     args=parser.parse_args()
     # Resolve before changing cwd, so user-provided relative paths stay meaningful.
     database=args.db.resolve();output=args.out.resolve()
@@ -29,7 +34,15 @@ def main():
         base=[sys.executable,'-u','-m','estate','--db',str(database)]
         options=['--sources',*args.sources,'--pages',str(args.pages),'--delay',str(args.delay)]
         if args.headed:options.append('--headed')
+        if args.use_ml_profile:options.append('--use-ml-profile')
+        if args.neighborhoods:options.extend(['--neighborhoods',*args.neighborhoods])
+        if args.bedrooms:options.extend(['--bedrooms',*map(str,args.bedrooms)])
+        options.extend(['--max-listings',str(args.max_listings)])
         result=subprocess.run([*base,'collect',*options])
+        code=result.returncode
+        if args.details and 'casasymas' in args.sources:
+            detail_result=subprocess.run([*base,'enrich','--sources','casasymas','--limit',str(args.details),*(['--headed'] if args.headed else [])])
+            code=code or detail_result.returncode
         subprocess.run([*base,'export','--out',str(output)],check=True)
         runtime=Path.home()/'.cache/codex-runtimes/codex-primary-runtime/dependencies'
         node=Path(os.environ.get('ARTIFACT_NODE',runtime/'node/bin/node'))
@@ -37,9 +50,9 @@ def main():
             subprocess.run([str(node),'scripts/export_database.mjs',str(output/'properties.json')],check=True)
         else:
             print('JSON y CSV exportados. Excel requiere el runtime @oai/artifact-tool; consultar README.')
-        if result.returncode:
+        if code:
             print('Captura parcial o fallida: el export puede conservar avisos anteriores. Consultar runs.json y última captura.')
-        return result.returncode
+        return code
 
 
 if __name__=='__main__':

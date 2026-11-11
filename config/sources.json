@@ -15,7 +15,7 @@
       "venta": "https://www.casasymas.com.uy/propiedades/venta/montevideo"
     },
     "selector": "a.prop-entrada",
-    "max_pages": 3
+    "max_pages": 30
   },
   "remax": {
     "transport": "browser",
@@ -25,7 +25,7 @@
     },
     "selector": "a.card-remax__href",
     "max_pages": 1,
-    "limitation": "Usar --headed. Validar resultados antes de reaplicar filtros. Paginación excluida por resultados inconsistentes."
+    "limitation": "Usar --headed. Paginación probada y rechazada por pérdida de filtros; se conserva solo la primera página válida."
   },
   "mercadolibre": {
     "transport": "browser",

@@ -21,6 +21,7 @@ class Store:
           status TEXT, records INTEGER, error TEXT);
         CREATE TABLE IF NOT EXISTS listings(source TEXT, id TEXT, operation TEXT, first_seen TEXT,
           last_seen TEXT, payload TEXT, PRIMARY KEY(source,id,operation));
+        CREATE TABLE IF NOT EXISTS listing_details(source TEXT,id TEXT,operation TEXT,observed_at TEXT,payload TEXT,PRIMARY KEY(source,id,operation));
         CREATE TABLE IF NOT EXISTS observations(source TEXT,id TEXT,operation TEXT,observed_at TEXT,
           run_id TEXT,payload TEXT,PRIMARY KEY(source,id,operation,observed_at));
         ''')
@@ -63,6 +64,18 @@ class Store:
         result=[]
         for item in self.db.execute('SELECT * FROM listings ORDER BY source,operation,id'):
             r=json.loads(item['payload'])
+            detail=self.db.execute('SELECT observed_at,payload FROM listing_details WHERE source=? AND id=? AND operation=?',(r['source'],r['id'],r['operation'])).fetchone()
+            r['detail_observed_at']=detail['observed_at'] if detail else None
+            r['external_reference']=None
+            if detail:
+                fields=json.loads(detail['payload'])
+                if r.get('expenses') is None and fields.get('expenses') is not None:
+                    r['expenses']=fields['expenses']
+                    r['expenses_currency']=fields.get('expenses_currency')
+                for key,value in fields.items():
+                    if key in ('expenses','expenses_currency'):continue
+                    if r.get(key) in (None,''):
+                        r[key]=value
             if source and r['source'] != source: continue
             if operation and r['operation'] != operation: continue
             if neighborhood and fold(r['neighborhood']) != fold(neighborhood): continue
@@ -72,6 +85,11 @@ class Store:
             r.update(first_seen=item['first_seen'],last_seen=item['last_seen'])
             result.append(r)
         return result
+
+    def save_details(self,row,fields,observed_at):
+        with self.db:
+            self.db.execute('INSERT OR REPLACE INTO listing_details VALUES(?,?,?,?,?)',
+                (row['source'],row['id'],row['operation'],observed_at,json.dumps(fields,ensure_ascii=False)))
 
     def changes(self):
         previous={};changes=[]
