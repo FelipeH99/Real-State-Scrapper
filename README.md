@@ -19,9 +19,9 @@ Todavía no incluye una interfaz web.
 | Fuente | Integración | Estado |
 | --- | --- | --- |
 | Campiglia | HTTP | Captura y exportación probadas en vivo |
-| Casas y Más | Playwright | Parser validado con capturas de navegador; ejecución autónoma pendiente de validar |
-| RE/MAX | Playwright | Parser validado con capturas de navegador; ejecución autónoma pendiente de validar |
-| Mercado Libre | Playwright | Parser validado con capturas de navegador; ejecución autónoma pendiente de validar |
+| Casas y Más | Playwright | Captura autónoma validada en alquiler y venta, con dos páginas por operación |
+| RE/MAX | Playwright visible (`--headed`) | Captura y exportación validadas en alquiler y venta; una página por operación |
+| Mercado Libre | Playwright | Probado: HTTP 403 en modo sin ventana; exige cuenta en modo visible. Captura anónima bloqueada |
 | InfoCasas y Casasweb | Importación de HTML | Parsers disponibles; captura en vivo deshabilitada |
 
 El acceso depende de cada portal y puede cambiar. Un bloqueo o desafío se registra
@@ -52,16 +52,36 @@ Capturar Campiglia y exportar la base:
 sh scripts/run.sh --sources campiglia
 ```
 
-Intentar todas las fuentes habilitadas, una página por operación:
+Ejecutar las fuentes de navegador disponibles, con ventana visible:
 
 ```sh
-sh scripts/run.sh
+sh scripts/run.sh --sources casasymas remax --headed
 ```
+
+Para incluir Mercado Libre en la comprobación manual:
+
+```sh
+sh scripts/run.sh --sources casasymas remax mercadolibre --headed
+```
+
+En la prueba actual, Mercado Libre exige una cuenta y se informa como fuente
+bloqueada: no se obtienen avisos nuevos de ese portal. Esto no se corrige cambiando
+selectores. El proceso continúa con las otras fuentes y termina con código `2`.
+No utiliza sesiones personales ni intenta completar la verificación.
 
 No se instala ninguna tarea programada. Un bloqueo de proceso impide ejecutar
 dos capturas simultáneas. El código de salida `2` indica captura parcial o fallida:
 la exportación puede incluir avisos de ejecuciones anteriores. Revisá siempre
-la fecha de última observación y el estado de la captura.
+la fecha de última observación y el estado de la captura. `status` y `runs.json`
+incluyen el resultado de cada fuente y operación, con cantidad de avisos y error.
+Los fallos generan HTML, captura PNG y diagnóstico JSON en `data/captures/<run>/`;
+son archivos locales ignorados por Git.
+
+Para probar desde una base separada y elegir la carpeta de exportación:
+
+```sh
+sh scripts/run.sh --sources casasymas remax --headed --pages 2 --db data/prueba.sqlite3 --out outputs/prueba
+```
 
 Capturar sin exportar, con navegador visible:
 
@@ -72,6 +92,8 @@ Capturar sin exportar, con navegador visible:
 La paginación tiene un máximo de tres páginas por búsqueda en Casas y Más y
 Mercado Libre, y una en Campiglia y RE/MAX. En RE/MAX está limitada porque la
 navegación puede perder los filtros; se rechazan resultados contradictorios.
+El recolector conserva los resultados iniciales válidos y solo reaplica los filtros
+cuando son inconsistentes, seleccionando explícitamente la operación.
 
 ### Consultar y exportar
 
@@ -157,7 +179,12 @@ revisá el enlace de origen antes de comparar. No se verifican precios de cierre
 ```
 
 Las pruebas usan datos sintéticos y bases temporales; no necesitan credenciales,
-capturas privadas ni acceso a los portales.
+capturas privadas ni acceso a los portales. Para incluir la integración con un
+Chromium real contra un servidor local (incluye captura, HTTP 403 y diagnósticos):
+
+```sh
+PLAYWRIGHT_TESTS=1 .venv/bin/python -m unittest discover -s tests -v
+```
 
 | Ruta | Responsabilidad |
 | --- | --- |

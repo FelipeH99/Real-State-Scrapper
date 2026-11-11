@@ -42,10 +42,10 @@ scope.showGridLines=false;
 scope.getRange('A1:F20').format.font={name:'Arial',size:10,color:'#173546'};
 scope.mergeCells('A1:F1');scope.getRange('A1').values=[['Fuentes, pruebas y limitaciones']];
 scope.getRange('A1:F1').format={fill:'#183B4E',font:{color:'#FFFFFF',bold:true,size:16},rowHeight:34};
-scope.getRange('A3:F3').values=[['Fuente','Alquileres','Ventas','Método probado','Limitación','Página de referencia']];
+scope.getRange('A3:F3').values=[['Fuente','Alquileres','Ventas','Integración','Limitación','Página de referencia']];
 const names=['campiglia','casasymas','remax','mercadolibre','infocasas','casasweb'];
-const methods=['HTTP + parser','Navegador + parser','Navegador + parser','Navegador + parser','Importación de piloto','Importación de piloto'];
-const limits=['Precios de venta «desde». Faltan datos de ficha.','Moneda original extraída del elemento de precio; revisar ubicaciones.','Reaplicar filtros. Paginación desactivada. Barrio no siempre informado.','Excluye enlaces de publicidad y proyectos con rangos. GC requiere ficha.','No se incluyó en el recolector en vivo. Revisar condiciones de reutilización.','No se incluyó en el recolector en vivo: condiciones prohíben extracción automatizada.'];
+const methods=['HTTP','Playwright','Playwright visible','Playwright / importación','Importación de HTML','Importación de HTML'];
+const limits=['Precios de venta «desde». Faltan datos de ficha.','Moneda original extraída del elemento de precio; revisar ubicaciones.','Validar antes de reaplicar filtros. Usar navegador visible. Paginación desactivada.','Captura anónima bloqueada en la prueba autónoma. Revisar fecha del aviso y runs.json.','No se incluyó en el recolector en vivo. Revisar condiciones de reutilización.','No se incluyó en el recolector en vivo: condiciones prohíben extracción automatizada.'];
 const urls=['https://campiglia.com.uy/inmobiliaria','https://www.casasymas.com.uy/propiedades/alquiler/montevideo','https://www.remax.com.uy/apartamentos-en-alquiler-en-montevideo','https://listado.mercadolibre.com.uy/inmuebles/apartamentos/alquiler/montevideo/apartamentos-alquiler_NoIndex_True','https://www.infocasas.com.uy/informacion','https://casasweb.com/condiciones.aspx'];
 scope.getRange('A4:F9').values=names.map((n,i)=>[n,rows.filter(r=>r.source===n&&r.operation==='alquiler').length,rows.filter(r=>r.source===n&&r.operation==='venta').length,methods[i],limits[i],urls[i]]);
 scope.getRange('A3:F3').format={fill:'#24566A',font:{color:'#FFFFFF',bold:true},rowHeight:30};
@@ -54,7 +54,7 @@ const scopeNotes=[
  'Un registro = fuente + ID + operación. La deduplicación no une propiedades entre portales.',
  'Los precios son de oferta. No se convierten monedas ni se concluye que un aviso desaparecido se vendió o alquiló.',
  'Las fuentes pueden mostrar ubicaciones o tipologías inconsistentes; conservar el enlace y revisar antes de comparar.',
- 'Validación: navegadores integrados para capturas; recolector HTTP probado en vivo. Playwright independiente aún requiere validación de ejecución en este equipo.',
+ 'Consultar runs.json para conocer el estado por fuente y operación. Un fallo conserva avisos anteriores: revisar última captura.',
  'Solo ejecución manual. La base conserva observaciones y fallos. El Excel es una exportación estática y no se actualiza solo.'
 ];
 scopeNotes.forEach((n,i)=>{scope.mergeCells(`A${i+12}:F${i+12}`);scope.getRange(`A${i+12}`).values=[[n]];});

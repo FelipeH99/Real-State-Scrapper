@@ -85,4 +85,9 @@ class Store:
         return changes
 
     def status(self):
-        return [dict(r) for r in self.db.execute('SELECT * FROM runs ORDER BY started DESC LIMIT 10')]
+        runs=[dict(r) for r in self.db.execute('SELECT * FROM runs ORDER BY started DESC LIMIT 10')]
+        for run in runs:
+            run['pages']=[dict(r) for r in self.db.execute(
+                'SELECT source,operation,url,status,records,error FROM pages WHERE run_id=? ORDER BY rowid',
+                (run['id'],))]
+        return runs
