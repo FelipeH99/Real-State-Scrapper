@@ -3,8 +3,18 @@
 MVP de una herramienta local para recopilar avisos de apartamentos en alquiler y
 venta, consultar precios por barrio y dormitorios, conservar un historial y
 exportar resultados. Está implementada en Python y se usa desde la terminal.
-Incluye además una API y un worker desplegables con Docker; todavía no incluye
-una interfaz web propia.
+Incluye una interfaz web para explorar propiedades, aplicar filtros, exportar Excel y lanzar capturas manuales, junto con una API y un worker desplegables con Docker.
+
+**Stack:** Python · FastAPI · Playwright · SQLite · Docker · JavaScript
+
+## Recorrido del proyecto
+
+1. **Capturar:** ejecutar fuentes HTTP o de navegador mediante un worker.
+2. **Conservar:** normalizar avisos y guardar observaciones e historial en SQLite.
+3. **Explorar:** consultar el panel web y filtrar propiedades por barrio, operación y precio.
+4. **Exportar:** descargar una selección para analizarla fuera de la aplicación.
+
+El proyecto muestra integración de fuentes heterogéneas, procesamiento en segundo plano y una interfaz de consulta sobre datos persistidos.
 
 ## Despliegue con Docker
 
@@ -13,7 +23,7 @@ python3 scripts/setup_deploy.py
 docker compose up -d --build
 ```
 
-API: `http://127.0.0.1:8000/docs`. Requiere el token local generado en
+Panel web: `http://127.0.0.1:8000/`. API: `http://127.0.0.1:8000/docs`. Requiere el token local generado en
 `.secrets/api_key` para operar. Las capturas se encolan manualmente con `POST /jobs`.
 API y worker separados, cola durable, volumen persistente, health checks, límites
 por trabajo y exportación Excel sin dependencias de Codex.
